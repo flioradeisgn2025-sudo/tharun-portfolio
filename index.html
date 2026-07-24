@@ -1008,6 +1008,21 @@ var AWARDS = [
     });
   });
 
+  /* ══ HERO REFS + PIN (created FIRST so every trigger below it positions
+        correctly relative to the pinned hero's added scroll length) ══ */
+  var portal    = $('#portal');
+  var portalCap = $('#portalCap');
+  var marks     = $('#marks');
+  var heroBar   = $('#heroBar');
+  var heroName  = $('.hero-name');
+  var heroNote  = $('#heroNote');
+  var fieldEl   = $('#field');
+  var fallbackEl= $('.hero-fallback');
+  var counterEl = $('#counter');
+  var railEl    = $('.rail');
+  if (portal) gsap.set(portal, { xPercent: -50, yPercent: -50, scale: 0.045, opacity: 0 });
+  if (!REDUCED && heroName) buildHeroScroll();   // portalFill/nameBottomY/buildHeroScroll are hoisted
+
   /* ══ BLUR-WORD REVEALS ══ */
   function splitWords(root) {
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
@@ -1046,14 +1061,7 @@ var AWARDS = [
     });
   });
 
-  /* ══ HERO — the portal zoom ══ */
-  var portal    = $('#portal');
-  var portalCap = $('#portalCap');
-  var marks     = $('#marks');
-  var heroBar   = $('#heroBar');
-
-  var heroName = $('.hero-name');
-
+  /* ══ HERO — the portal zoom (refs + pin already created above) ══ */
   // The portal is now a full-viewport element, so filling the screen is just
   // a small overscan — the tiny "box" look comes from scaling it DOWN, which
   // keeps the image sharp at every size (no upscaling a tiny bitmap).
@@ -1074,21 +1082,13 @@ var AWARDS = [
     return Math.max(0, (br.top - 28) - nr.bottom);
   }
 
-  // centre the full-viewport portal and shrink it to a tiny hidden box at rest
-  if (portal) gsap.set(portal, { xPercent: -50, yPercent: -50, scale: 0.045, opacity: 0 });
-
-  var heroNote   = $('#heroNote');
-  var fieldEl    = $('#field');
-  var fallbackEl = $('.hero-fallback');
-  var counterEl  = $('#counter');
-  var railEl     = $('.rail');
-
-  // ── the scroll-driven hero timeline (built AFTER the load intro finishes) ──
+  // ── the scroll-driven hero timeline ──
   function buildHeroScroll() {
     var RISE = 1.2, SEP = 0.9, Z = RISE + SEP;
     var heroTl = gsap.timeline({
       scrollTrigger: { trigger: '#hero', start: 'top top', end: '+=360%',
-                       pin: true, scrub: 0.8, invalidateOnRefresh: true }
+                       pin: true, scrub: 0.8, invalidateOnRefresh: true,
+                       refreshPriority: 10 }   // measured before the triggers below it
     });
     heroTl
       .fromTo(heroName, { y: nameBottomY }, { y: 0, ease: 'power2.out', duration: RISE }, 0)
@@ -1168,8 +1168,7 @@ var AWARDS = [
     gsap.set('#introFill', { yPercent: 100 });
     document.body.classList.remove('intro-lock');
     if (lenis) lenis.start();
-    buildHeroScroll();
-    ScrollTrigger.refresh();
+    ScrollTrigger.refresh();   // pin already exists; just re-confirm positions
   }
 
   function runIntro() {
@@ -1696,7 +1695,9 @@ var AWARDS = [
     });
   }
 
-  window.addEventListener('load', function () { ScrollTrigger.refresh(); });
+  // don't refresh while the intro is playing, or the pin would snap the name
+  // to its resting spot mid-animation
+  window.addEventListener('load', function () { if (introDone || REDUCED) ScrollTrigger.refresh(); });
 })();
 </script>
 
