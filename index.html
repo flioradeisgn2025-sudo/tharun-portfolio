@@ -132,6 +132,7 @@ body.on-light .rail-seg.on{ background:#0A0A0A; }
 
 .hero-mid{ display:flex; align-items:center; justify-content:center; flex:1; }
 .hero-name{
+  position:relative;
   display:flex; align-items:center; justify-content:center;
   gap:clamp(.75rem,2.5vw,2.5rem); width:100%;
   font-size:clamp(3rem,11.5vw,12.5rem); line-height:.9;
@@ -145,18 +146,21 @@ body.on-light .rail-seg.on{ background:#0A0A0A; }
 }
 
 /* the portal — tiny image between the two words that swallows the screen */
+/* The zoom target is a FULL-VIEWPORT element scaled DOWN to a tiny box at
+   rest and up to ~1 when it fills the screen — so the texture is always
+   rendered at full resolution and never pixelates when it grows. */
 .portal{
-  position:relative; flex:none;
-  width:52px; height:30px; overflow:hidden;
-  transform-origin:50% 50%; will-change:transform;
-  background:#000;
+  position:absolute; left:50%; top:50%;
+  width:100vw; height:100svh; overflow:hidden;
+  transform-origin:50% 50%; will-change:transform,opacity;
+  background:#000; pointer-events:none; z-index:5;
 }
 .portal img{ width:100%; height:100%; object-fit:cover; filter:grayscale(1) contrast(1.25); }
 .portal-cap{
   position:absolute; inset:0; display:grid; place-items:center;
   font-family:var(--serif); font-style:italic;
-  font-size:2.6px; color:#fff; opacity:0; letter-spacing:.01em;
-  text-shadow:0 1px 6px rgba(0,0,0,.5);
+  font-size:clamp(1.1rem,1.8vw,1.7rem); color:#fff; opacity:0; letter-spacing:.01em;
+  text-shadow:0 1px 14px rgba(0,0,0,.6);
 }
 .marks{ position:fixed; inset:0; z-index:6; pointer-events:none; opacity:0; }
 .marks i{
@@ -1030,12 +1034,13 @@ var AWARDS = [
 
   var heroName = $('.hero-name');
 
-  function portalScale() {
-    // offsetWidth/Height are the untransformed layout size, so this stays
-    // correct even after the separation phase has already scaled the portal
-    var w = portal.offsetWidth  || 52;
-    var h = portal.offsetHeight || 30;
-    return Math.max(window.innerWidth / w, window.innerHeight / h) * 1.08;
+  // The portal is now a full-viewport element, so filling the screen is just
+  // a small overscan — the tiny "box" look comes from scaling it DOWN, which
+  // keeps the image sharp at every size (no upscaling a tiny bitmap).
+  function portalFill() {
+    var w = portal.offsetWidth  || window.innerWidth;
+    var h = portal.offsetHeight || window.innerHeight;
+    return Math.max(window.innerWidth / w, window.innerHeight / h) * 1.06;
   }
 
   // how far to push the name down so, at rest, it sits just above the bottom bar
@@ -1052,8 +1057,8 @@ var AWARDS = [
   // start the name at the bottom immediately, before ScrollTrigger kicks in,
   // so there's no flash of it centred on load
   if (!REDUCED && heroName) gsap.set(heroName, { y: nameBottomY });
-  // keep the little box hidden until it zooms — no thumbnail sitting in the name
-  if (!REDUCED && portal) gsap.set(portal, { opacity: 0 });
+  // centre the full-viewport portal and shrink it to a tiny hidden box at rest
+  if (!REDUCED && portal) gsap.set(portal, { xPercent: -50, yPercent: -50, scale: 0.045, opacity: 0 });
 
   if (!REDUCED) {
     var RISE = 1.2;   // pin portion spent raising the name to centre
@@ -1085,14 +1090,13 @@ var AWARDS = [
       .to('#hnB',      { xPercent:  130, opacity: 0.3, ease: 'power2.in', duration: 1.4 }, Z)
       .to('#heroNote', { opacity: 0, y: -30, ease: 'power1.in', duration: 0.8 }, Z)
       .to('#heroBar',  { opacity: 0, y:  30, ease: 'power1.in', duration: 0.8 }, Z)
-      .fromTo(portal,  { opacity: 0 },
-                       { scale: portalScale, opacity: 1, ease: 'power2.inOut', duration: 1.6 }, Z)
+      .to(portal,      { scale: portalFill, opacity: 1, ease: 'power2.inOut', duration: 1.6 }, Z)
       .to(portalCap,   { opacity: 1, ease: 'power1.out', duration: 0.4 }, Z + 0.9)
       .to(marks,       { opacity: 1, duration: 0.3 }, Z + 1.1)
-      // release: shrink + rotate away
+      // release: drift + rotate away
       .to(portalCap,   { opacity: 0, duration: 0.25 }, Z + 2.3)
       .to(marks,       { opacity: 0, duration: 0.25 }, Z + 2.3)
-      .to(portal,      { scale: 1.6, rotateY: -34, rotateX: 8, opacity: 0, ease: 'power2.in', duration: 0.9 }, Z + 2.35)
+      .to(portal,      { scale: 1.22, rotateY: -30, rotateX: 7, opacity: 0, ease: 'power2.in', duration: 0.9 }, Z + 2.35)
       .to('#field',    { opacity: 0.55, duration: 0.9 }, Z + 2.35);
   }
 
