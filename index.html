@@ -150,6 +150,7 @@ body.intro-lock{ overflow:hidden; }
   font-size:clamp(3rem,11.5vw,12.5rem); line-height:.9;
   white-space:nowrap;
 }
+.hn-l{ display:inline-block; will-change:transform,opacity; }
 .hn-a{ font-family:var(--sans); font-weight:400; letter-spacing:-.04em; color:#F2F1EC; }
 .hn-b{
   font-family:var(--serif); font-style:italic; font-weight:600; letter-spacing:-.005em;
@@ -1121,9 +1122,28 @@ var AWARDS = [
          ease: 'rough({strength:2.5,points:16,taper:none,randomize:true,clamp:false})' }, 0);
   }
 
-  if (!REDUCED && heroName) {
+  // split the name into letters for the intro glitch, then restore the clean
+  // text afterwards so the gradient + kerning are perfect for the scroll phase
+  var hnA = $('#hnA'), hnB = $('#hnB');
+  var origA = hnA ? hnA.textContent : '', origB = hnB ? hnB.textContent : '';
+  var nameLetters = [];
+  function splitLetters(el) {
+    var text = el.textContent; el.textContent = '';
+    var out = [];
+    for (var i = 0; i < text.length; i++) {
+      var s = document.createElement('span'); s.className = 'hn-l'; s.textContent = text[i];
+      el.appendChild(s); out.push(s);
+    }
+    return out;
+  }
+  function restoreName() { if (hnA) hnA.textContent = origA; if (hnB) hnB.textContent = origB; }
+
+  if (!REDUCED && heroName && hnA && hnB) {
+    nameLetters = splitLetters(hnA).concat(splitLetters(hnB));
     // hide the hero synchronously so nothing flashes before the intro plays
-    gsap.set(heroName, { y: 0, opacity: 0, filter: 'blur(16px)', scale: 0.9 });
+    gsap.set(heroName, { y: 0, opacity: 1, filter: 'none', scale: 1 });
+    gsap.set(nameLetters, { opacity: 0 });
+    heroName.classList.add('intro-hot');   // letters glitch in cyan
     gsap.set([heroNote, heroBar], { opacity: 0 });
     if (counterEl)  gsap.set(counterEl,  { opacity: 0 });
     if (railEl)     gsap.set(railEl,     { opacity: 0 });
@@ -1140,6 +1160,7 @@ var AWARDS = [
     introDone = true;
     // force the resting hero state (correct whether the intro played or was
     // force-ended because rAF was paused with the tab hidden)
+    restoreName();
     heroName.classList.remove('intro-hot');
     gsap.set(heroName, { opacity: 1, filter: 'none', scale: 1, y: nameBottomY });
     gsap.set([heroNote, heroBar, counterEl, railEl].filter(Boolean), { opacity: 1, clearProps: 'x' });
@@ -1156,12 +1177,15 @@ var AWARDS = [
     // guaranteed unlock even if rAF is paused (tab hidden) mid-intro
     setTimeout(function () { if (!introDone) { try { tl.progress(1); } catch (e) {} finishIntro(); } }, 6000);
     tl
-      // 1 — white name blurs in, centred on black
-      .to(heroName, { opacity: 1, filter: 'blur(0px)', scale: 1, duration: 0.7, ease: 'power2.out' })
-      .to({}, { duration: 0.25 })
-      // 2 — orange panel slides up from the bottom; name turns cyan
-      .add(function () { heroName.classList.add('intro-hot'); })
-      .to('#introFill', { yPercent: 0, duration: 0.75, ease: 'power3.inOut' }, '<')
+      // 1 — letters glitch in one by one (cyan on black)
+      .fromTo(nameLetters, { opacity: 0, x: -4, y: 4 },
+        { opacity: 1, x: 0, y: 0, duration: 0.32, clearProps: 'x,y',
+          ease: 'rough({strength:2.6,points:12,taper:none,randomize:true,clamp:false})',
+          stagger: { each: 0.055 } }, 0)
+      .add(restoreName)     // swap split letters back to clean text (all visible now)
+      .to({}, { duration: 0.3 })
+      // 2 — orange panel slides up from the bottom (name stays cyan)
+      .to('#introFill', { yPercent: 0, duration: 0.75, ease: 'power3.inOut' })
       .to({}, { duration: 0.35 })
       // 3 — name drops to its hero spot; orange slides off the top; name back to white
       .add(function () { heroName.classList.remove('intro-hot'); })
