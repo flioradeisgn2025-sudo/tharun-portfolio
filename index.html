@@ -113,6 +113,18 @@ body.on-light .rail-seg.on{ background:#0A0A0A; }
   position:absolute; inset:0; width:100%; height:100%;
   display:block; z-index:0;
 }
+/* LOAD INTRO — orange panel that slides up from the bottom behind the name */
+.intro-fill{
+  position:absolute; inset:0; z-index:1; background:var(--accent);
+  transform:translateY(100%); pointer-events:none; will-change:transform;
+}
+/* name turns cyan while it's on the orange panel */
+.hero-name.intro-hot .hn-a{ color:#37E6DA !important; }
+.hero-name.intro-hot .hn-b{
+  background:none !important; color:#37E6DA !important;
+  -webkit-text-fill-color:#37E6DA !important;
+}
+body.intro-lock{ overflow:hidden; }
 .hero-fallback{
   position:absolute; inset:0; z-index:0;
   background:
@@ -673,6 +685,7 @@ body.on-light .rail-seg.on{ background:#0A0A0A; }
 <section class="hero" id="hero" data-name="Intro">
   <div class="hero-fallback"></div>
   <canvas id="field"></canvas>
+  <div class="intro-fill" id="introFill" aria-hidden="true"></div>
 
   <div class="hero-in">
     <p class="hero-note" id="heroNote">
@@ -1059,50 +1072,121 @@ var AWARDS = [
     return Math.max(0, (br.top - 28) - nr.bottom);
   }
 
-  // start the name at the bottom immediately, before ScrollTrigger kicks in,
-  // so there's no flash of it centred on load
-  if (!REDUCED && heroName) gsap.set(heroName, { y: nameBottomY });
   // centre the full-viewport portal and shrink it to a tiny hidden box at rest
-  if (!REDUCED && portal) gsap.set(portal, { xPercent: -50, yPercent: -50, scale: 0.045, opacity: 0 });
+  if (portal) gsap.set(portal, { xPercent: -50, yPercent: -50, scale: 0.045, opacity: 0 });
 
-  if (!REDUCED) {
-    var RISE = 1.2;   // pin portion spent raising the name to centre
-    var SEP  = 0.9;   // then a gentle separation before the box zooms
-    var Z    = RISE + SEP;
+  var heroNote   = $('#heroNote');
+  var fieldEl    = $('#field');
+  var fallbackEl = $('.hero-fallback');
+  var counterEl  = $('#counter');
+  var railEl     = $('.rail');
 
+  // ── the scroll-driven hero timeline (built AFTER the load intro finishes) ──
+  function buildHeroScroll() {
+    var RISE = 1.2, SEP = 0.9, Z = RISE + SEP;
     var heroTl = gsap.timeline({
-      scrollTrigger: {
-        trigger: '#hero',
-        start: 'top top',
-        end: '+=360%',
-        pin: true,
-        scrub: 0.8,
-        invalidateOnRefresh: true
-      }
+      scrollTrigger: { trigger: '#hero', start: 'top top', end: '+=360%',
+                       pin: true, scrub: 0.8, invalidateOnRefresh: true }
     });
-
     heroTl
-      // Phase 1 — name rises from the bottom to the centre
       .fromTo(heroName, { y: nameBottomY }, { y: 0, ease: 'power2.out', duration: RISE }, 0)
-
-      // Phase 2 — a slight separation: Tharun eases left, Kumar eases right,
-      // opening a clean empty gap in the middle (no box yet)
-      .to('#hnA',   { xPercent: -14, ease: 'power2.out', duration: SEP }, RISE)
-      .to('#hnB',   { xPercent:  14, ease: 'power2.out', duration: SEP }, RISE)
-
-      // Phase 3 — the box materialises in the middle and zooms to full screen
-      .to('#hnA',      { xPercent: -130, opacity: 0.3, ease: 'power2.in', duration: 1.4 }, Z)
-      .to('#hnB',      { xPercent:  130, opacity: 0.3, ease: 'power2.in', duration: 1.4 }, Z)
+      .to('#hnA', { xPercent: -14, ease: 'power2.out', duration: SEP }, RISE)
+      .to('#hnB', { xPercent:  14, ease: 'power2.out', duration: SEP }, RISE)
+      .to('#hnA', { xPercent: -130, opacity: 0.3, ease: 'power2.in', duration: 1.4 }, Z)
+      .to('#hnB', { xPercent:  130, opacity: 0.3, ease: 'power2.in', duration: 1.4 }, Z)
       .to('#heroNote', { opacity: 0, y: -30, ease: 'power1.in', duration: 0.8 }, Z)
       .to('#heroBar',  { opacity: 0, y:  30, ease: 'power1.in', duration: 0.8 }, Z)
-      .to(portal,      { scale: portalFill, opacity: 1, ease: 'power2.inOut', duration: 1.6 }, Z)
-      .to(portalCap,   { opacity: 1, ease: 'power1.out', duration: 0.4 }, Z + 0.9)
-      .to(marks,       { opacity: 1, duration: 0.3 }, Z + 1.1)
-      // release: drift + rotate away
-      .to(portalCap,   { opacity: 0, duration: 0.25 }, Z + 2.3)
-      .to(marks,       { opacity: 0, duration: 0.25 }, Z + 2.3)
-      .to(portal,      { scale: 1.22, rotateY: -30, rotateX: 7, opacity: 0, ease: 'power2.in', duration: 0.9 }, Z + 2.35)
-      .to('#field',    { opacity: 0.55, duration: 0.9 }, Z + 2.35);
+      .to(portal,    { scale: portalFill, opacity: 1, ease: 'power2.inOut', duration: 1.6 }, Z)
+      .to(portalCap, { opacity: 1, ease: 'power1.out', duration: 0.4 }, Z + 0.9)
+      .to(marks,     { opacity: 1, duration: 0.3 }, Z + 1.1)
+      .to(portalCap, { opacity: 0, duration: 0.25 }, Z + 2.3)
+      .to(marks,     { opacity: 0, duration: 0.25 }, Z + 2.3)
+      .to(portal,    { scale: 1.22, rotateY: -30, rotateX: 7, opacity: 0, ease: 'power2.in', duration: 0.9 }, Z + 2.35)
+      .to('#field',  { opacity: 0.55, duration: 0.9 }, Z + 2.35);
+  }
+
+  // ── glitch reveal — element flickers + jitters in like a digital glitch ──
+  function glitchIn(el, delay) {
+    if (!el) return;
+    var t = gsap.timeline({ delay: delay });
+    t.set(el, { opacity: 0 })
+     .to(el, { opacity: 1,    duration: 0.06 })
+     .to(el, { opacity: 0.12, duration: 0.05 })
+     .to(el, { opacity: 1,    duration: 0.05 })
+     .to(el, { opacity: 0.5,  duration: 0.04 })
+     .to(el, { opacity: 1,    duration: 0.07 })
+     .fromTo(el, { x: -5 },
+       { x: 0, duration: 0.35, clearProps: 'x',
+         ease: 'rough({strength:2.5,points:16,taper:none,randomize:true,clamp:false})' }, 0);
+  }
+
+  if (!REDUCED && heroName) {
+    // hide the hero synchronously so nothing flashes before the intro plays
+    gsap.set(heroName, { y: 0, opacity: 0, filter: 'blur(16px)', scale: 0.9 });
+    gsap.set([heroNote, heroBar], { opacity: 0 });
+    if (counterEl)  gsap.set(counterEl,  { opacity: 0 });
+    if (railEl)     gsap.set(railEl,     { opacity: 0 });
+    if (fieldEl)    gsap.set(fieldEl,    { opacity: 0 });
+    if (fallbackEl) gsap.set(fallbackEl, { opacity: 0 });
+    gsap.set('#introFill', { yPercent: 100 });
+    document.body.classList.add('intro-lock');
+    if (lenis) lenis.stop();
+  }
+
+  var introDone = false;
+  function finishIntro() {
+    if (introDone) return;
+    introDone = true;
+    // force the resting hero state (correct whether the intro played or was
+    // force-ended because rAF was paused with the tab hidden)
+    heroName.classList.remove('intro-hot');
+    gsap.set(heroName, { opacity: 1, filter: 'none', scale: 1, y: nameBottomY });
+    gsap.set([heroNote, heroBar, counterEl, railEl].filter(Boolean), { opacity: 1, clearProps: 'x' });
+    gsap.set([fieldEl, fallbackEl].filter(Boolean), { opacity: 1 });
+    gsap.set('#introFill', { yPercent: 100 });
+    document.body.classList.remove('intro-lock');
+    if (lenis) lenis.start();
+    buildHeroScroll();
+    ScrollTrigger.refresh();
+  }
+
+  function runIntro() {
+    var tl = gsap.timeline({ onComplete: finishIntro });
+    // guaranteed unlock even if rAF is paused (tab hidden) mid-intro
+    setTimeout(function () { if (!introDone) { try { tl.progress(1); } catch (e) {} finishIntro(); } }, 6000);
+    tl
+      // 1 — white name blurs in, centred on black
+      .to(heroName, { opacity: 1, filter: 'blur(0px)', scale: 1, duration: 0.7, ease: 'power2.out' })
+      .to({}, { duration: 0.25 })
+      // 2 — orange panel slides up from the bottom; name turns cyan
+      .add(function () { heroName.classList.add('intro-hot'); })
+      .to('#introFill', { yPercent: 0, duration: 0.75, ease: 'power3.inOut' }, '<')
+      .to({}, { duration: 0.35 })
+      // 3 — name drops to its hero spot; orange slides off the top; name back to white
+      .add(function () { heroName.classList.remove('intro-hot'); })
+      .to(heroName, { y: nameBottomY, duration: 0.9, ease: 'power3.inOut' }, '<')
+      .to('#introFill', { yPercent: -100, duration: 0.85, ease: 'power3.inOut' }, '<+=0.05')
+      .to([fieldEl, fallbackEl].filter(Boolean), { opacity: 1, duration: 0.8 }, '<+=0.1')
+      // 4 — hero elements glitch in one by one
+      .add(function () {
+        glitchIn(heroNote, 0);
+        glitchIn(heroBar, 0.12);
+        glitchIn(counterEl, 0.24);
+        glitchIn(railEl, 0.34);
+      }, '-=0.2');
+  }
+
+  if (REDUCED) {
+    if (heroName) gsap.set(heroName, { y: nameBottomY });
+  } else if (heroName) {
+    var introStarted = false;
+    var startIntro = function () { if (introStarted) return; introStarted = true; runIntro(); };
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(startIntro);
+      setTimeout(startIntro, 1400);   // safety net if fonts.ready never resolves
+    } else {
+      startIntro();
+    }
   }
 
   /* ══ PROJECTS ══ */
