@@ -1,0 +1,38 @@
+{
+  "driveFolder": "https://drive.google.com/drive/folders/1U2V9gJRxMCTcpRcCkYDqCx2c7K2cGIZg?usp=sharing",
+  "title": "Social Media Reels",
+  "category": "Reels",
+  "description": "High-quality social media reels produced for brand marketing — from concept to final edit, optimized for engagement.",
+  "longDescription": "A collection of professionally produced social media reels designed for maximum engagement across platforms. Each reel is crafted from concept to final cut, featuring dynamic editing, motion graphics overlays, and platform-optimized formatting.\n\nThe portfolio includes 8+ reels spanning product showcases, brand storytelling, and creative content — produced in formats ranging from 1080p to 4K resolution.",
+  "role": "Video Producer & Editor",
+  "tags": ["Reels", "Social Media", "Video Editing", "Brand Marketing", "Content"],
+  "thumbnail": "thumbnail.svg",
+  "screenshots": [],
+  "liveUrl": "",
+  "githubUrl": "",
+  "date": "2026-01",
+  "featured": false,
+  "order": 6,
+  "colorTheme": {
+    "primary": "#f43f5e",
+    "secondary": "#ec4899",
+    "bg": "#0a0a0a"
+  },
+  "highlights": [
+    "8+ professionally edited social media reels",
+    "1080p to 4K production quality",
+    "Dynamic editing with motion graphics overlays",
+    "Platform-optimized for Instagram & social media"
+  ],
+  "viewMode": "gallery",
+  "gallery": [
+    { "file": "1st reel final.mp4", "title": "Reel 1", "type": "video" },
+    { "file": "2nd reel out.mp4", "title": "Reel 2", "type": "video" },
+    { "file": "1080p version.mov", "title": "Reel 3 (1080p)", "type": "video" },
+    { "file": "1080p version part 2.mov", "title": "Reel 3 Part 2", "type": "video" },
+    { "file": "3rd final.mov", "title": "Reel 4", "type": "video" },
+    { "file": "2nd test video extented.m4v", "title": "Reel 5 Extended", "type": "video" },
+    { "file": "5th reel 4k.mov", "title": "Reel 6 (4K)", "type": "video" },
+    { "file": "6th reel.mp4", "title": "Reel 7", "type": "video" }
+  ]
+}
